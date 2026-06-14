@@ -1,6 +1,6 @@
 # TEDI Platform
 
-This repository contains the technical bootstrap and base authentication system for the TEDI platform.
+This repository contains the technical bootstrap, authentication system, and parents & children module for the TEDI platform.
 
 ## Architecture Stack
 
@@ -31,18 +31,39 @@ This repository contains the technical bootstrap and base authentication system 
 
 ## Development Credentials
 
+### Admin Superuser
 * **Username**: `alvaro.garcia`
 * **Email**: `alvaro.garcia@itnexora.com`
 * **Password**: `Tedi123#`
 * **Assigned Role**: `super_admin`
 
+### Parent Demo User
+* **Username**: `maria.garcia`
+* **Email**: `maria.garcia@example.com`
+* **Password**: `Tedi123#`
+* **Assigned Role**: `parent`
+
 ---
 
 ## Endpoints Created
 
+### Authentication
 * **Health API**: GET `/api/health/`
 * **CSRF Token API**: GET `/api/auth/csrf/`
 * **Login API**: POST `/api/auth/login/`
 * **Logout API**: POST `/api/auth/logout/`
 * **Profile Info API**: GET `/api/auth/me/`
+
+### Children & Parents
+* **Parent Profiles**:
+  - GET `/api/children/parents/`
+  - POST `/api/children/parents/`
+  - GET `/api/children/parents/{id}/`
+  - PATCH `/api/children/parents/{id}/`
+* **Children**:
+  - GET `/api/children/children/`
+  - POST `/api/children/children/`
+  - GET `/api/children/children/{id}/`
+  - PATCH `/api/children/children/{id}/`
+
 * **Django Admin**: [http://localhost:8000/admin/](http://localhost:8000/admin/)

@@ -44,5 +44,8 @@ python manage.py seed_roles
 echo "Creating default superuser if it doesn't exist..."
 python manage.py create_default_superuser
 
+echo "Seeding demo children and parents data..."
+python manage.py seed_demo_children
+
 echo "Starting Django development server..."
 exec python manage.py runserver 0.0.0.0:8000

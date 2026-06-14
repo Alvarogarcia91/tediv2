@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { getCurrentUser, logout } from '@/lib/auth';
 
 interface UserProfile {
@@ -95,6 +96,12 @@ export default function DashboardPage() {
             <div style={styles.detailItem}>
               <strong>Is Parent:</strong> {user?.is_parent ? 'Yes' : 'No'}
             </div>
+          </div>
+
+          <div style={styles.actionsSection}>
+            <Link href="/children" style={styles.childrenLink}>
+              Ver Lista de Niños
+            </Link>
           </div>
         </div>
       </div>
@@ -203,5 +210,22 @@ const styles = {
   infoText: {
     color: '#6b7280',
     fontSize: '16px',
+  },
+  actionsSection: {
+    marginTop: '20px',
+    display: 'flex',
+    justifyContent: 'center',
+  },
+  childrenLink: {
+    display: 'inline-block',
+    backgroundColor: '#2563eb',
+    color: '#ffffff',
+    textDecoration: 'none',
+    padding: '10px 20px',
+    borderRadius: '6px',
+    fontSize: '14px',
+    fontWeight: '500',
+    textAlign: 'center',
+    width: '100%',
   },
 };
