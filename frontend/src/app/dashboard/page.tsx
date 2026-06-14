@@ -105,6 +105,9 @@ export default function DashboardPage() {
             <Link href="/billing" style={styles.billingLink}>
               Ver Facturación y Paquetes
             </Link>
+            <Link href="/attendance" style={styles.attendanceLink}>
+              Ver Control de Asistencia
+            </Link>
           </div>
         </div>
       </div>
@@ -235,6 +238,17 @@ const styles = {
   billingLink: {
     display: 'block',
     backgroundColor: '#10b981',
+    color: '#ffffff',
+    textDecoration: 'none',
+    padding: '10px 20px',
+    borderRadius: '6px',
+    fontSize: '14px',
+    fontWeight: '500' as const,
+    textAlign: 'center' as const,
+  },
+  attendanceLink: {
+    display: 'block',
+    backgroundColor: '#8b5cf6',
     color: '#ffffff',
     textDecoration: 'none',
     padding: '10px 20px',

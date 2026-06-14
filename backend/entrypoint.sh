@@ -50,5 +50,9 @@ python manage.py seed_demo_children
 echo "Seeding demo billing data..."
 python manage.py seed_demo_billing
 
+echo "Seeding demo attendance data..."
+python manage.py seed_demo_attendance
+
 echo "Starting Django development server..."
 exec python manage.py runserver 0.0.0.0:8000
+
