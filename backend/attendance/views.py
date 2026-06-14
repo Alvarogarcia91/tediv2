@@ -58,6 +58,16 @@ def check_in_view(request):
     try:
         child = Child.objects.get(pk=child_id)
         record = AttendanceRecord.check_in(child, request.user, notes)
+        
+        # Trigger check-in event notification safely
+        try:
+            from notifications.services import create_child_checked_in_event
+            create_child_checked_in_event(child, request.user)
+        except Exception as e:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Error creating check-in notification: {e}", exc_info=True)
+            
         serializer = AttendanceRecordSerializer(record)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
     except Child.DoesNotExist:
@@ -82,6 +92,28 @@ def check_out_view(request):
     try:
         record = AttendanceRecord.objects.get(child_id=child_id, status='active')
         record.check_out(request.user, notes)
+        
+        # Trigger check-out and low-balance notifications safely
+        try:
+            from billing.models import ChildHourBalance
+            balance, _ = ChildHourBalance.objects.get_or_create(child=record.child)
+            remaining_minutes = balance.available_minutes
+            
+            from notifications.services import create_child_checked_out_event, create_low_balance_event
+            create_child_checked_out_event(
+                child=record.child,
+                actor=request.user,
+                billable_minutes=record.billable_minutes,
+                remaining_minutes=remaining_minutes
+            )
+            
+            if remaining_minutes <= 60:
+                create_low_balance_event(child=record.child, remaining_minutes=remaining_minutes)
+        except Exception as e:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Error creating check-out/low-balance notification: {e}", exc_info=True)
+            
         serializer = AttendanceRecordSerializer(record)
         return Response(serializer.data, status=status.HTTP_200_OK)
     except AttendanceRecord.DoesNotExist:

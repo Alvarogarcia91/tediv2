@@ -20,7 +20,7 @@ interface Child {
 
 interface AttendanceRecord {
   id: number;
-  child_id: number;
+  child: number;
   child_name: string;
   checked_in_at: string;
   checked_out_at: string | null;
@@ -410,13 +410,13 @@ export default function AttendancePage() {
                               />
                               <div style={styles.btnRow}>
                                 <button
-                                  onClick={() => handleCheckOut(rec.child_id, rec.id)}
+                                  onClick={() => handleCheckOut(rec.child, rec.id)}
                                   style={styles.checkOutButton}
                                 >
                                   Check-Out
                                 </button>
                                 <button
-                                  onClick={() => handleCancel(rec.child_id, rec.id)}
+                                  onClick={() => handleCancel(rec.child, rec.id)}
                                   style={styles.cancelButton}
                                 >
                                   Cancelar

@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'children',
     'billing',
     'attendance',
+    'notifications',
 ]
 
 AUTH_USER_MODEL = 'accounts.User'

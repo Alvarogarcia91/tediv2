@@ -137,3 +137,12 @@ class HourPurchase(TimestampMixin):
                 self._balance_credited = True
                 # Use update to avoid calling save() recursively
                 HourPurchase.objects.filter(pk=self.pk).update(_balance_credited=True)
+
+                # Trigger notification safely
+                try:
+                    from notifications.services import create_package_paid_event
+                    create_package_paid_event(self)
+                except Exception as e:
+                    import logging
+                    logger = logging.getLogger(__name__)
+                    logger.error(f"Error creating package paid notification: {e}", exc_info=True)

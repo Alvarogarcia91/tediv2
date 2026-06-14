@@ -108,6 +108,9 @@ export default function DashboardPage() {
             <Link href="/attendance" style={styles.attendanceLink}>
               Ver Control de Asistencia
             </Link>
+            <Link href="/notifications" style={styles.notificationsLink}>
+              Ver Notificaciones
+            </Link>
           </div>
         </div>
       </div>
@@ -249,6 +252,17 @@ const styles = {
   attendanceLink: {
     display: 'block',
     backgroundColor: '#8b5cf6',
+    color: '#ffffff',
+    textDecoration: 'none',
+    padding: '10px 20px',
+    borderRadius: '6px',
+    fontSize: '14px',
+    fontWeight: '500' as const,
+    textAlign: 'center' as const,
+  },
+  notificationsLink: {
+    display: 'block',
+    backgroundColor: '#f59e0b',
     color: '#ffffff',
     textDecoration: 'none',
     padding: '10px 20px',
