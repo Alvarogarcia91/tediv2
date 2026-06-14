@@ -1,6 +1,6 @@
 # TEDI Platform
 
-This repository contains the technical bootstrap, authentication system, and parents & children module for the TEDI platform.
+This repository contains the technical bootstrap, authentication system, parents & children module, and billing system for the TEDI platform.
 
 ## Architecture Stack
 
@@ -65,5 +65,20 @@ This repository contains the technical bootstrap, authentication system, and par
   - POST `/api/children/children/`
   - GET `/api/children/children/{id}/`
   - PATCH `/api/children/children/{id}/`
+
+### Billing
+* **Hour Packages**:
+  - GET `/api/billing/packages/`
+  - POST `/api/billing/packages/`
+  - GET `/api/billing/packages/{id}/`
+  - PATCH `/api/billing/packages/{id}/`
+* **Child Hour Balances**:
+  - GET `/api/billing/balances/`
+  - GET `/api/billing/balances/{id}/`
+* **Hour Purchases**:
+  - GET `/api/billing/purchases/`
+  - POST `/api/billing/purchases/`
+  - GET `/api/billing/purchases/{id}/`
+  - PATCH `/api/billing/purchases/{id}/`
 
 * **Django Admin**: [http://localhost:8000/admin/](http://localhost:8000/admin/)

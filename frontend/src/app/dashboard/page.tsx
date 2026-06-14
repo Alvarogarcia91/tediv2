@@ -102,6 +102,9 @@ export default function DashboardPage() {
             <Link href="/children" style={styles.childrenLink}>
               Ver Lista de Niños
             </Link>
+            <Link href="/billing" style={styles.billingLink}>
+              Ver Facturación y Paquetes
+            </Link>
           </div>
         </div>
       </div>
@@ -214,18 +217,30 @@ const styles = {
   actionsSection: {
     marginTop: '20px',
     display: 'flex',
-    justifyContent: 'center',
+    flexDirection: 'column' as const,
+    gap: '10px',
+    width: '100%',
   },
   childrenLink: {
-    display: 'inline-block',
+    display: 'block',
     backgroundColor: '#2563eb',
     color: '#ffffff',
     textDecoration: 'none',
     padding: '10px 20px',
     borderRadius: '6px',
     fontSize: '14px',
-    fontWeight: '500',
-    textAlign: 'center',
-    width: '100%',
+    fontWeight: '500' as const,
+    textAlign: 'center' as const,
+  },
+  billingLink: {
+    display: 'block',
+    backgroundColor: '#10b981',
+    color: '#ffffff',
+    textDecoration: 'none',
+    padding: '10px 20px',
+    borderRadius: '6px',
+    fontSize: '14px',
+    fontWeight: '500' as const,
+    textAlign: 'center' as const,
   },
 };

@@ -47,5 +47,8 @@ python manage.py create_default_superuser
 echo "Seeding demo children and parents data..."
 python manage.py seed_demo_children
 
+echo "Seeding demo billing data..."
+python manage.py seed_demo_billing
+
 echo "Starting Django development server..."
 exec python manage.py runserver 0.0.0.0:8000

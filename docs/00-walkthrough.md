@@ -1,30 +1,37 @@
-# walkthrough.md - TEDI Technical Bootstrap & Parents-Children Module
+# walkthrough.md - TEDI Technical Bootstrap, Children, & Billing Modules
 
-This document details what was built for TEDI, focusing on the parents and children module.
+This document details what was built for TEDI, focusing on the parents-children module and the billing system.
 
-## What was added
+## Billing Module (`billing/`)
 
-1. **New App `children`**:
-   - Handles the profiling of parent users and children.
-   - Restricts view access at the database level so parent users only see their own kids, while admins/staff can see all.
+### Database Models
 
-2. **Database Models**:
-   - `TimestampMixin` (abstract model for `created_at` and `updated_at` fields).
-   - `ParentProfile`: Extends the core `User` model via a OneToOne relationship. Stores additional contact/emergency info.
-   - `Child`: Many-to-many relationship with `ParentProfile`. Generates unique alphanumeric codes, and computes child age.
+1. **`HourPackage`**:
+   - Stores pre-configured hour packages (e.g. 5 hours, 10 hours, 20 hours).
+   - Fields: `name`, `description`, `hours`, `price`, `is_active`, `sort_order`.
+   - Property: `minutes` (computes total minutes: `hours * 60`).
 
-3. **Data Relationships**:
-   - `User` (1-to-1) -> `ParentProfile` (many-to-many) -> `Child`
-   - Enables multiple parent/guardian accounts to be linked to the same child.
+2. **`ChildHourBalance`**:
+   - Manages hour balances for each child.
+   - Fields: `child` (OneToOneField), `available_minutes`, `total_purchased_minutes`, `total_consumed_minutes`.
+   - Methods:
+     - `add_purchased_minutes(minutes)`: Atomically adds minutes to available and purchased counters.
+     - `consume_minutes(minutes)`: Validates and deducts minutes. Avoids negative balances.
 
-4. **Unique Code Generation**:
-   - Inside `Child.save()`, if `unique_code` is left blank, a helper method generates a unique 6-character alphanumeric string. It checks database records recursively to ensure no duplicates.
+3. **`HourPurchase`**:
+   - Tracks package purchases.
+   - Fields: `child`, `package` (SET_NULL), `purchased_minutes`, `amount`, `payment_status` (pending, paid, cancelled), `payment_method`, `payment_reference`, `_balance_credited`.
+   - Automatically populates `purchased_minutes` and `amount` from the linked `HourPackage` if they are omitted.
 
-5. **Demo Seeding command (`seed_demo_children`)**:
-   - Creates parent user `maria.garcia` (role: `parent`).
-   - Generates Maria's parent profile.
-   - Creates children Sofía García and Mateo García linked to Maria.
-   - Designed to run idempotently: repeats updates existing records without duplication.
+### Double-Credit Protection
+- When an `HourPurchase` is saved, if `payment_status` is `paid` AND `_balance_credited` is `False`, the purchase credits the `purchased_minutes` to the child's `ChildHourBalance` and sets `_balance_credited` to `True`.
+- This operation is performed inside a database transaction (`transaction.atomic`) using `select_for_update` to avoid race conditions.
+- The `_balance_credited` flag is checked first, meaning subsequent edits to the purchase (e.g. updating notes) will never credit the child's balance a second time.
+
+### Demo Seeding command (`seed_demo_billing`)
+- Seeds three standard packages (5 hours, 10 hours, 20 hours).
+- Creates a paid purchase (`DEMO-CASH-001`) of 10 hours (600 minutes) for "Sofía García".
+- Ensures that running the command multiple times keeps Sofía's balance at exactly 600 minutes.
 
 ---
 
@@ -34,16 +41,18 @@ This document details what was built for TEDI, focusing on the parents and child
 2. Run Django shell assertions:
    ```bash
    docker compose exec backend python manage.py shell -c "
-   from django.contrib.auth import get_user_model
-   from children.models import ParentProfile, Child
-   u = get_user_model().objects.get(username='maria.garcia')
-   p = ParentProfile.objects.get(user=u)
-   assert p.children.count() == 2
-   print('Validation Succeeded!')
+   from billing.models import HourPackage, HourPurchase, ChildHourBalance
+   from children.models import Child
+   assert HourPackage.objects.all().count() == 3
+   sofia = Child.objects.get(first_name='Sofía', last_name='García')
+   balance = ChildHourBalance.objects.get(child=sofia)
+   assert balance.available_minutes == 600
+   purchase = HourPurchase.objects.get(payment_reference='DEMO-CASH-001')
+   assert purchase._balance_credited is True
+   print('Billing validation succeeded!')
    "
    ```
 3. Run API endpoint checks:
-   - Call `/api/children/children/` using the Django rest test factory (verified internally during testing).
-   - Confirm unauthenticated queries receive a `403 Forbidden` response.
-4. Verify Next.js compiles the `/children` route:
-   - Run `docker logs tedi_frontend` to check that Next.js dev server compiles `/children` to `200 OK` on access.
+   - Call `/api/billing/packages/` or `/api/billing/balances/` using testing tools.
+4. Verify Next.js compiles the `/billing` route:
+   - Run `docker logs tedi_frontend` to check that Next.js dev server compiles `/billing` to `200 OK` on access.

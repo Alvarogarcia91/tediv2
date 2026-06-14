@@ -37,6 +37,7 @@ INSTALLED_APPS = [
     'core',
     'accounts',
     'children',
+    'billing',
 ]
 
 AUTH_USER_MODEL = 'accounts.User'
