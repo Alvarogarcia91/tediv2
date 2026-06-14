@@ -26,6 +26,31 @@ interface ChildHourBalance {
   updated_at: string;
 }
 
+const SidebarShell = () => (
+  <aside className="sidebar">
+    <div className="sidebar-logo">
+      <div className="sidebar-logo-icon" style={{ color: 'white' }}>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 2L2 7v10l10 5 10-5V7L12 2z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/><path d="M12 22V12M2 7l10 5 10-5" stroke="currentColor" strokeWidth="1.5"/></svg>
+      </div>
+      <span className="sidebar-logo-text">TEDI</span>
+    </div>
+    <nav className="sidebar-section" style={{ flex: 1 }}>
+      {[
+        { href: '/dashboard', label: 'Dashboard', icon: '🏠' },
+        { href: '/children', label: 'Niños', icon: '👧' },
+        { href: '/attendance', label: 'Asistencia', icon: '✅' },
+        { href: '/billing', label: 'Facturación', icon: '💳', active: true },
+        { href: '/notifications', label: 'Notificaciones', icon: '🔔' },
+      ].map(item => (
+        <Link key={item.href} href={item.href} className={`sidebar-item${item.active ? ' active' : ''}`}>
+          <span>{item.icon}</span>
+          {item.label}
+        </Link>
+      ))}
+    </nav>
+  </aside>
+);
+
 export default function BillingPage() {
   const [packages, setPackages] = useState<HourPackage[]>([]);
   const [balances, setBalances] = useState<ChildHourBalance[]>([]);
@@ -34,252 +59,178 @@ export default function BillingPage() {
 
   useEffect(() => {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-    
-    // Fetch both endpoints in parallel
     Promise.all([
       fetch(`${apiUrl}/api/billing/packages/`, { credentials: 'include' }),
-      fetch(`${apiUrl}/api/billing/balances/`, { credentials: 'include' })
+      fetch(`${apiUrl}/api/billing/balances/`, { credentials: 'include' }),
     ])
       .then(async ([pkgRes, balRes]) => {
         if (!pkgRes.ok || !balRes.ok) {
-          if (pkgRes.status === 401 || pkgRes.status === 403 || balRes.status === 401 || balRes.status === 403) {
-            throw new Error('Not authorized to view billing information.');
-          }
-          throw new Error('Failed to fetch billing data.');
+          if ([401, 403].includes(pkgRes.status) || [401, 403].includes(balRes.status))
+            throw new Error('Sin autorización para ver facturación.');
+          throw new Error('Error al cargar datos de facturación.');
         }
-        
-        const pkgs = await pkgRes.json();
-        const bals = await balRes.json();
-        
-        setPackages(pkgs);
-        setBalances(bals);
+        setPackages(await pkgRes.json());
+        setBalances(await balRes.json());
         setLoading(false);
       })
-      .catch((err) => {
-        console.error('Error fetching billing data:', err);
-        setError(err.message || 'An error occurred.');
-        setLoading(false);
-      });
+      .catch(err => { setError(err.message); setLoading(false); });
   }, []);
 
   return (
-    <main style={styles.container}>
-      <div style={styles.card}>
-        <div style={styles.header}>
-          <h1 style={styles.title}>Billing Dashboard</h1>
-          <Link href="/dashboard" style={styles.backButton}>
-            Back to Dashboard
-          </Link>
+    <div className="app-shell">
+      <SidebarShell />
+      <main className="app-main">
+        <div className="topbar">
+          <div>
+            <p style={{ fontSize: '0.75rem', color: 'var(--tedi-text-muted)', fontWeight: 500 }}>Módulo Financiero</p>
+            <h1 className="topbar-title">Facturación & Paquetes</h1>
+          </div>
+          <Link href="/dashboard" className="btn btn-ghost btn-sm">← Dashboard</Link>
         </div>
 
-        {loading ? (
-          <p style={styles.infoText}>Loading billing data...</p>
-        ) : error ? (
-          <div style={styles.error}>{error}</div>
-        ) : (
-          <div style={styles.content}>
-            {/* Packages Section */}
-            <div style={styles.section}>
-              <h2 style={styles.sectionTitle}>Hour Packages</h2>
-              <div style={styles.tableWrapper}>
-                <table style={styles.table}>
-                  <thead>
-                    <tr style={styles.tableHeaderRow}>
-                      <th style={styles.th}>Package Name</th>
-                      <th style={styles.th}>Hours</th>
-                      <th style={styles.th}>Price</th>
-                      <th style={styles.th}>Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {packages.length ? (
-                      packages.map((pkg) => (
-                        <tr key={pkg.id} style={styles.tr}>
-                          <td style={styles.td}><strong>{pkg.name}</strong><br/><small style={styles.desc}>{pkg.description || 'No description'}</small></td>
-                          <td style={styles.td}>{pkg.hours} hrs ({pkg.minutes} min)</td>
-                          <td style={styles.td}>${pkg.price}</td>
-                          <td style={styles.td}>
-                            <span style={pkg.is_active ? styles.badgeActive : styles.badgeInactive}>
-                              {pkg.is_active ? 'Active' : 'Inactive'}
-                            </span>
-                          </td>
-                        </tr>
-                      ))
-                    ) : (
-                      <tr>
-                        <td colSpan={4} style={styles.tdEmpty}>No packages available.</td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
+        <div className="page-content">
+          {loading ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '3rem', justifyContent: 'center' }}>
+              <div className="spinner" /><p style={{ color: 'var(--tedi-text-2)' }}>Cargando datos...</p>
             </div>
+          ) : error ? (
+            <div className="alert alert-error">{error}</div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '2.5rem' }}>
 
-            {/* Balances Section */}
-            <div style={styles.section}>
-              <h2 style={styles.sectionTitle}>Child Hour Balances</h2>
-              <div style={styles.tableWrapper}>
-                <table style={styles.table}>
-                  <thead>
-                    <tr style={styles.tableHeaderRow}>
-                      <th style={styles.th}>Child</th>
-                      <th style={styles.th}>Available Hours (Minutes)</th>
-                      <th style={styles.th}>Total Purchased</th>
-                      <th style={styles.th}>Total Consumed</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {balances.length ? (
-                      balances.map((bal) => (
-                        <tr key={bal.id} style={styles.tr}>
-                          <td style={styles.td}><strong>{bal.child_name}</strong></td>
-                          <td style={styles.td}>
-                            <span style={styles.highlight}>{bal.available_hours} hrs</span> ({bal.available_minutes} min)
-                          </td>
-                          <td style={styles.td}>{bal.total_purchased_hours} hrs ({bal.total_purchased_minutes} min)</td>
-                          <td style={styles.td}>{bal.total_consumed_hours} hrs ({bal.total_consumed_minutes} min)</td>
+              {/* Stats summary */}
+              <div className="grid-3">
+                <div className="stat-card">
+                  <div className="stat-icon" style={{ background: 'rgba(124,58,237,0.12)', color: '#7C3AED' }}>📦</div>
+                  <div>
+                    <div className="stat-value">{packages.length}</div>
+                    <div className="stat-label">Paquetes de Horas</div>
+                  </div>
+                </div>
+                <div className="stat-card">
+                  <div className="stat-icon" style={{ background: 'rgba(16,185,129,0.10)', color: '#10B981' }}>👧</div>
+                  <div>
+                    <div className="stat-value">{balances.length}</div>
+                    <div className="stat-label">Balances de Niños</div>
+                  </div>
+                </div>
+                <div className="stat-card">
+                  <div className="stat-icon" style={{ background: 'rgba(6,182,212,0.10)', color: '#06B6D4' }}>⏱</div>
+                  <div>
+                    <div className="stat-value">{balances.reduce((a, b) => a + b.available_hours, 0)}h</div>
+                    <div className="stat-label">Horas Disponibles Total</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Packages table */}
+              <div>
+                <h2 className="t-h2" style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
+                  📦 Paquetes de Horas
+                </h2>
+                <div className="card" style={{ overflow: 'hidden' }}>
+                  <div style={{ overflowX: 'auto' }}>
+                    <table className="tedi-table">
+                      <thead>
+                        <tr>
+                          <th>Nombre del Paquete</th>
+                          <th>Horas / Minutos</th>
+                          <th>Precio</th>
+                          <th>Estado</th>
                         </tr>
-                      ))
-                    ) : (
-                      <tr>
-                        <td colSpan={4} style={styles.tdEmpty}>No child hour balances found.</td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
+                      </thead>
+                      <tbody>
+                        {packages.length ? packages.map(pkg => (
+                          <tr key={pkg.id}>
+                            <td>
+                              <div style={{ fontWeight: 600, color: 'var(--tedi-text)' }}>{pkg.name}</div>
+                              {pkg.description && <div style={{ fontSize: '0.8rem', color: 'var(--tedi-text-muted)', marginTop: 2 }}>{pkg.description}</div>}
+                            </td>
+                            <td>
+                              <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--tedi-primary-light)', fontWeight: 600 }}>
+                                {pkg.hours}h
+                              </span>
+                              <span style={{ color: 'var(--tedi-text-muted)', fontSize: '0.8125rem', marginLeft: '0.375rem' }}>
+                                ({pkg.minutes} min)
+                              </span>
+                            </td>
+                            <td>
+                              <span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '1rem', color: '#10B981' }}>
+                                ${pkg.price}
+                              </span>
+                            </td>
+                            <td>
+                              <span className={`badge ${pkg.is_active ? 'badge-success' : 'badge-danger'}`}>
+                                {pkg.is_active ? '● Activo' : '○ Inactivo'}
+                              </span>
+                            </td>
+                          </tr>
+                        )) : (
+                          <tr><td colSpan={4} style={{ textAlign: 'center', padding: '2.5rem', color: 'var(--tedi-text-muted)' }}>Sin paquetes registrados</td></tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+
+              {/* Balances table */}
+              <div>
+                <h2 className="t-h2" style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
+                  ⏳ Balance de Horas por Niño
+                </h2>
+                <div className="card" style={{ overflow: 'hidden' }}>
+                  <div style={{ overflowX: 'auto' }}>
+                    <table className="tedi-table">
+                      <thead>
+                        <tr>
+                          <th>Niño</th>
+                          <th>Disponibles</th>
+                          <th>Total Comprado</th>
+                          <th>Total Consumido</th>
+                          <th>Actualizado</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {balances.length ? balances.map(bal => (
+                          <tr key={bal.id}>
+                            <td>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
+                                <div style={{
+                                  width: 28, height: 28, borderRadius: '50%',
+                                  background: 'var(--tedi-grad-primary)',
+                                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                  color: 'white', fontWeight: 700, fontSize: '0.75rem',
+                                }}>
+                                  {bal.child_name?.[0]?.toUpperCase()}
+                                </div>
+                                <span style={{ fontWeight: 600, color: 'var(--tedi-text)' }}>{bal.child_name}</span>
+                              </div>
+                            </td>
+                            <td>
+                              <span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, color: '#06B6D4', fontSize: '1rem' }}>
+                                {bal.available_hours}h
+                              </span>
+                              <span style={{ color: 'var(--tedi-text-muted)', fontSize: '0.8rem', marginLeft: 4 }}>({bal.available_minutes} min)</span>
+                            </td>
+                            <td style={{ color: 'var(--tedi-text-2)' }}>{bal.total_purchased_hours}h ({bal.total_purchased_minutes} min)</td>
+                            <td style={{ color: 'var(--tedi-text-2)' }}>{bal.total_consumed_hours}h ({bal.total_consumed_minutes} min)</td>
+                            <td style={{ fontSize: '0.8rem', color: 'var(--tedi-text-muted)', fontFamily: 'var(--font-mono)' }}>
+                              {new Date(bal.updated_at).toLocaleDateString('es-ES')}
+                            </td>
+                          </tr>
+                        )) : (
+                          <tr><td colSpan={5} style={{ textAlign: 'center', padding: '2.5rem', color: 'var(--tedi-text-muted)' }}>Sin balances registrados</td></tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
-        )}
-      </div>
-    </main>
+          )}
+        </div>
+      </main>
+    </div>
   );
 }
-
-const styles = {
-  container: {
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    minHeight: '100vh',
-    backgroundColor: '#f3f4f6',
-    padding: '20px',
-  },
-  card: {
-    backgroundColor: '#ffffff',
-    padding: '30px',
-    borderRadius: '8px',
-    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-    maxWidth: '900px',
-    width: '100%',
-  },
-  header: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    borderBottom: '1px solid #e5e7eb',
-    paddingBottom: '16px',
-    marginBottom: '20px',
-  },
-  title: {
-    fontSize: '22px',
-    fontWeight: 'bold' as const,
-    color: '#111827',
-    margin: 0,
-  },
-  backButton: {
-    textDecoration: 'none',
-    backgroundColor: '#4b5563',
-    color: '#ffffff',
-    padding: '8px 14px',
-    borderRadius: '6px',
-    fontSize: '14px',
-    fontWeight: '500' as const,
-  },
-  infoText: {
-    color: '#6b7280',
-    fontSize: '16px',
-    textAlign: 'center' as const,
-  },
-  error: {
-    backgroundColor: '#fef2f2',
-    border: '1px solid #fca5a5',
-    color: '#b91c1c',
-    padding: '12px',
-    borderRadius: '6px',
-    fontSize: '14px',
-    textAlign: 'center' as const,
-  },
-  content: {
-    display: 'flex',
-    flexDirection: 'column' as const,
-    gap: '30px',
-  },
-  section: {
-    display: 'flex',
-    flexDirection: 'column' as const,
-    gap: '12px',
-  },
-  sectionTitle: {
-    fontSize: '18px',
-    fontWeight: '600' as const,
-    color: '#111827',
-    margin: 0,
-  },
-  desc: {
-    color: '#6b7280',
-    fontSize: '12px',
-  },
-  tableWrapper: {
-    overflowX: 'auto' as const,
-    border: '1px solid #e5e7eb',
-    borderRadius: '6px',
-  },
-  table: {
-    width: '100%',
-    borderCollapse: 'collapse' as const,
-    fontSize: '14px',
-    color: '#374151',
-  },
-  tableHeaderRow: {
-    backgroundColor: '#f9fafb',
-    borderBottom: '1px solid #e5e7eb',
-  },
-  th: {
-    padding: '12px 16px',
-    textAlign: 'left' as const,
-    fontWeight: '600' as const,
-    color: '#4b5563',
-  },
-  tr: {
-    borderBottom: '1px solid #e5e7eb',
-  },
-  td: {
-    padding: '12px 16px',
-  },
-  tdEmpty: {
-    padding: '24px',
-    textAlign: 'center' as const,
-    color: '#9ca3af',
-  },
-  badgeActive: {
-    backgroundColor: '#d1fae5',
-    color: '#065f46',
-    padding: '2px 8px',
-    borderRadius: '9999px',
-    fontSize: '12px',
-    fontWeight: '500' as const,
-  },
-  badgeInactive: {
-    backgroundColor: '#fee2e2',
-    color: '#991b1b',
-    padding: '2px 8px',
-    borderRadius: '9999px',
-    fontSize: '12px',
-    fontWeight: '500' as const,
-  },
-  highlight: {
-    fontWeight: 'bold' as const,
-    color: '#2563eb',
-  },
-};
