@@ -38,8 +38,11 @@ sys.exit(1)
 echo "Applying database migrations..."
 python manage.py migrate --noinput
 
-echo "Creating superuser if it doesn't exist..."
-python manage.py create_dev_superuser
+echo "Seeding initial roles/groups..."
+python manage.py seed_roles
+
+echo "Creating default superuser if it doesn't exist..."
+python manage.py create_default_superuser
 
 echo "Starting Django development server..."
 exec python manage.py runserver 0.0.0.0:8000

@@ -1,44 +1,47 @@
-# walkthrough.md - TEDI Technical Bootstrap
+# walkthrough.md - TEDI Technical Bootstrap & Authentication
 
-This document details what was built for the technical bootstrap of TEDI, the design choices made, and how components interact.
+This document details what was built for the technical bootstrap of TEDI, focusing on the authentication layer and role management.
 
 ## What was created
 
-1. **Docker Compose Environment**:
-   - `db` service: PostgreSQL database (`postgres:15-alpine`).
-   - `backend` service: Python 3.11/Django REST Framework container with hot-reloading bind mounts.
-   - `frontend` service: Next.js/TypeScript App Router container with hot-reloading bind mounts.
+1. **Custom User Model (`accounts.User`)**:
+   - Extends Django's `AbstractUser`.
+   - Fields: `email` (unique), `username` (unique), `first_name`, `last_name`, `is_parent` (boolean default False), and `last_login_ip` (nullable IP address).
+   - Configured in settings: `AUTH_USER_MODEL = 'accounts.User'`.
 
-2. **Django Backend (`backend/`)**:
-   - Organized as a Django project named `tedi` with a core application `core`.
-   - Django REST Framework configured for API responses.
-   - `django-cors-headers` configured to permit local development access from `http://localhost:3000`.
-   - `/api/health/` GET endpoint that checks service availability.
+2. **Idempotent Seeding & Superuser Management**:
+   - `seed_roles` management command: Creates Groups (`super_admin`, `admin`, `staff`, `parent`) if they don't exist.
+   - `create_default_superuser` management command: Creates the developer superuser `alvaro.garcia`, makes them staff/superuser, and assigns them to the `super_admin` Group.
+   - Entrypoint updates: The backend container runs `migrate`, `seed_roles`, and `create_default_superuser` in sequence on startup.
 
-3. **Idempotent Superuser Command**:
-   - A custom management command `create_dev_superuser` located in `core/management/commands/`.
-   - Checks if the user exists. If not, it creates them. If they exist, it updates their email and password based on environmental settings.
-   - Runs automatically on Docker startup via the `entrypoint.sh` wrapper.
+3. **Session Authentication & CSRF Protection**:
+   - Django Session Authentication configured in DRF settings.
+   - Endpoint GET `/api/auth/csrf/` to set the `csrftoken` cookie.
+   - Endpoint POST `/api/auth/login/` for logging in, validating credentials, setting session data, and returning profile information.
+   - Endpoint POST `/api/auth/logout/` for logging out.
+   - Endpoint GET `/api/auth/me/` for retrieving profile details including assigned group roles.
 
-4. **Next.js Frontend (`frontend/`)**:
-   - Built with Next.js 14, App Router, and TypeScript.
-   - Homepage checking backend health asynchronously via `fetch` from the client.
-
----
-
-## Design Choices & Rationale
-
-- **Environment variables**: Decoupled environment configs (`.env` and `.env.example`) so passwords and keys are not hardcoded.
-- **Wait-for-DB Python check**: Avoids installing additional binaries inside the container like `nc` or `wait-for-it.sh`. An inline Python script using `psycopg2` tests the database connection until it's ready.
-- **Node Modules Volume**: Set up `node_modules` volume in `docker-compose.yml` to prevent local `node_modules` overrides from conflicts between the host OS and the Linux container.
+4. **Next.js Pages**:
+   - `/login` Page: Captures username & password, handles login flow using the `lib/auth.ts` helper library.
+   - `/dashboard` Page: Validates authentication status via `/api/auth/me/`, renders profile roles, and supports logout.
 
 ---
 
-## How to Test
+## Technical Details
 
-1. Ensure Docker Desktop is running.
-2. Run `docker compose up --build`.
-3. Visit `http://localhost:3000` to verify the frontend status and connection to the backend.
-4. Visit `http://localhost:8000/admin/` and log in using the credentials:
-   - **Username**: `alvaro.garcia`
-   - **Password**: `Tedi123#`
+### Session Authentication & CSRF
+- **Session Auth**: Django stores a session identifier in a cookie (`sessionid`) sent back in response headers during login. Subsequent requests automatically pass this cookie.
+- **CSRF Protection**: For write requests (POST), Django checks for a CSRF token in the `X-CSRFToken` header. The frontend retrieves this token from the `csrftoken` cookie set by GET `/api/auth/csrf/` and sends it back in requests.
+- **CORS/Credentials**: Next.js fetches are configured with `credentials: 'include'` to allow browsers to exchange session/CSRF cookies across ports (3000 to 8000).
+
+---
+
+## How to Test and Validate
+
+1. Start docker compose: `docker compose up --build`.
+2. Visit [http://localhost:3000/login](http://localhost:3000/login).
+3. Authenticate with credentials:
+   - Username: `alvaro.garcia`
+   - Password: `Tedi123#`
+4. Confirm redirection to `/dashboard` displaying user roles (shows `super_admin`).
+5. Click "Logout" and confirm redirection back to `/login`.

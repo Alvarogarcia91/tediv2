@@ -1,10 +1,10 @@
-# TEDI Platform Bootstrap
+# TEDI Platform
 
-This is the initial technical bootstrap for the TEDI platform.
+This repository contains the technical bootstrap and base authentication system for the TEDI platform.
 
 ## Architecture Stack
 
-* **Backend**: Python 3.11 + Django + Django REST Framework
+* **Backend**: Python 3.11 + Django + Django REST Framework (DRF)
 * **Frontend**: Next.js + TypeScript
 * **Database**: PostgreSQL 15
 * **Docker Compose**: Orchestrates all services for local development.
@@ -22,18 +22,27 @@ This is the initial technical bootstrap for the TEDI platform.
    ```bash
    docker compose up --build
    ```
+   *(If upgrading from a previous checkpoint, reset volumes using `docker compose down -v` first)*.
 
-3. **Check health status**:
-   - Backend health API: [http://localhost:8000/api/health/](http://localhost:8000/api/health/)
-   - Next.js web application: [http://localhost:3000/](http://localhost:3000/)
-   - Django admin dashboard: [http://localhost:8000/admin/](http://localhost:8000/admin/)
+3. **Open the Login page**:
+   Go to [http://localhost:3000/login](http://localhost:3000/login)
 
 ---
 
-## Dev Superuser Credentials
+## Development Credentials
 
 * **Username**: `alvaro.garcia`
 * **Email**: `alvaro.garcia@itnexora.com`
 * **Password**: `Tedi123#`
+* **Assigned Role**: `super_admin`
 
-See the files under the `docs/` folder for detailed design reviews and setup details.
+---
+
+## Endpoints Created
+
+* **Health API**: GET `/api/health/`
+* **CSRF Token API**: GET `/api/auth/csrf/`
+* **Login API**: POST `/api/auth/login/`
+* **Logout API**: POST `/api/auth/logout/`
+* **Profile Info API**: GET `/api/auth/me/`
+* **Django Admin**: [http://localhost:8000/admin/](http://localhost:8000/admin/)
