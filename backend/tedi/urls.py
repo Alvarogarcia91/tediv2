@@ -1,6 +1,7 @@
 from django.contrib import admin
 from django.urls import path, include
 from core.views import health_check
+from children.views import parent_summary_view
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -10,4 +11,5 @@ urlpatterns = [
     path('api/billing/', include('billing.urls')),
     path('api/attendance/', include('attendance.urls')),
     path('api/notifications/', include('notifications.urls')),
+    path('api/parents/me/summary/', parent_summary_view, name='parent_summary'),
 ]

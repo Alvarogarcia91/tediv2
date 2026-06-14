@@ -99,15 +99,24 @@ export default function DashboardPage() {
           </div>
 
           <div style={styles.actionsSection}>
-            <Link href="/children" style={styles.childrenLink}>
-              Ver Lista de Niños
-            </Link>
-            <Link href="/billing" style={styles.billingLink}>
-              Ver Facturación y Paquetes
-            </Link>
-            <Link href="/attendance" style={styles.attendanceLink}>
-              Ver Control de Asistencia
-            </Link>
+            {(user?.is_superuser || user?.is_staff || user?.roles.some((r: string) => ['super_admin', 'admin', 'staff'].includes(r))) && (
+              <>
+                <Link href="/children" style={styles.childrenLink}>
+                  Ver Lista de Niños
+                </Link>
+                <Link href="/billing" style={styles.billingLink}>
+                  Ver Facturación y Paquetes
+                </Link>
+                <Link href="/attendance" style={styles.attendanceLink}>
+                  Ver Control de Asistencia
+                </Link>
+              </>
+            )}
+            {(user?.is_parent || user?.roles.includes('parent') || user?.is_superuser) && (
+              <Link href="/parent" style={styles.parentPortalLink}>
+                Portal de Padre
+              </Link>
+            )}
             <Link href="/notifications" style={styles.notificationsLink}>
               Ver Notificaciones
             </Link>
@@ -263,6 +272,17 @@ const styles = {
   notificationsLink: {
     display: 'block',
     backgroundColor: '#f59e0b',
+    color: '#ffffff',
+    textDecoration: 'none',
+    padding: '10px 20px',
+    borderRadius: '6px',
+    fontSize: '14px',
+    fontWeight: '500' as const,
+    textAlign: 'center' as const,
+  },
+  parentPortalLink: {
+    display: 'block',
+    backgroundColor: '#0d9488',
     color: '#ffffff',
     textDecoration: 'none',
     padding: '10px 20px',
